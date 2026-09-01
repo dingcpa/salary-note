@@ -20,10 +20,14 @@ with sync_playwright() as p:
     for key in ("0808", "0809"):
         pg.click("#clearBtn") if key != "0808" else None
         T._fill(pg, T.PAYLOADS[key])
+        pg.click("#lineCardBtn")
+        pg.wait_for_function("document.querySelectorAll('#cardList img').length >= 1")
+        pg.screenshot(path=str(out / f"modal_{key}.png"))
         with pg.expect_download() as dl:
-            pg.click("#cards .dlCard")
+            pg.click("#cardList .dlCard")
         path = out / f"card_{key}.png"
         dl.value.save_as(path)
         print("saved:", path)
+        pg.click("#cardClose")
     print("page errors:", errors)
     b.close()

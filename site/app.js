@@ -134,31 +134,12 @@
   function renderDocs(calc) {
     $('preview').innerHTML = calc ? SalaryPrint.rosterHtml(calc) + SalaryPrint.statementHtml(calc) : '';
   }
-  function renderCards(calc) {
-    const box = $('cards');
-    const n = calc ? calc.teachers.length : 0;
-    while (box.children.length > n) box.lastElementChild.remove();
-    for (let i = 0; i < n; i++) {
-      let item = box.children[i];
-      if (!item) {
-        item = document.createElement('div');
-        item.className = 'cardItem';
-        item.innerHTML = '<canvas></canvas><div class="btns">' +
-          '<button type="button" class="small dlCard">⬇ 下載 PNG</button>' +
-          '<button type="button" class="small copyCard">📋 複製到剪貼簿</button></div>';
-        box.appendChild(item);
-      }
-      item.dataset.i = String(i);
-      SalaryCard.draw(calc, calc.teachers[i], item.querySelector('canvas'));
-    }
-  }
   function renderAll() {
     renderPeriodHint();
     const calc = currentCalc();
     renderTeacherPreviews(calc);
     renderSummary(calc);
     renderDocs(calc);
-    renderCards(calc);
     return calc;
   }
 
@@ -209,25 +190,71 @@
       setStatus(e.message, 'err');
     }
   }
-  async function cardAction(btn) {
-    const i = Number(btn.closest('.cardItem').dataset.i);
+  // ---------- LINE 通知圖卡（彈窗預覽 → 截圖／下載／複製） ----------
+  let cardUrls = [];
+  function setCardStatus(msg, cls) {
+    const s = $('cardStatus');
+    s.className = cls || '';
+    s.textContent = msg || '';
+  }
+  async function openCardModal() {
     try {
       const calc = requireCalc();
-      const t = calc.teachers[i];
-      if (!t) return;
+      const list = $('cardList');
+      revokeCardUrls();
+      list.innerHTML = '';
+      for (let i = 0; i < calc.teachers.length; i++) {
+        const t = calc.teachers[i];
+        const url = URL.createObjectURL(await SalaryCard.toBlob(calc, t));
+        cardUrls.push(url);
+        const fig = document.createElement('figure');
+        fig.className = 'cardFig';
+        fig.dataset.i = String(i);
+        fig.innerHTML = '<img><figcaption><span></span>' +
+          '<button type="button" class="small dlCard">⬇ 下載 PNG</button>' +
+          '<button type="button" class="small copyCard">📋 複製到剪貼簿</button></figcaption>';
+        const img = fig.querySelector('img');
+        img.src = url;
+        img.alt = `${t.name} 通知圖卡`;
+        fig.querySelector('figcaption span').textContent = t.name;
+        list.appendChild(fig);
+      }
+      setCardStatus('');
+      $('cardModal').hidden = false;
+      document.body.classList.add('modal-open');
+    } catch (e) {
+      setStatus(e.message, 'err');
+    }
+  }
+  function revokeCardUrls() {
+    for (const u of cardUrls) URL.revokeObjectURL(u);
+    cardUrls = [];
+  }
+  function closeCardModal() {
+    revokeCardUrls();
+    $('cardList').innerHTML = '';
+    $('cardModal').hidden = true;
+    document.body.classList.remove('modal-open');
+  }
+  async function cardAction(btn) {
+    const i = Number(btn.closest('.cardFig').dataset.i);
+    try {
+      const calc = currentCalc();
+      const t = calc && calc.teachers[i];
+      if (!t) throw new Error('找不到這位外師的資料，請關閉後重新開啟圖卡');
       const blob = await SalaryCard.toBlob(calc, t);
       if (btn.classList.contains('dlCard')) {
         saveAs(blob, SalaryCard.fileName(calc, t));
-        setStatus(`已下載 ${t.name} 的通知圖卡`, 'ok');
+        setCardStatus(`已下載 ${t.name} 的通知圖卡`, 'ok');
       } else {
         if (!navigator.clipboard || !navigator.clipboard.write || !window.ClipboardItem) {
-          throw new Error('這個瀏覽器不支援複製圖片，請改用「下載 PNG」再傳送');
+          throw new Error('這個瀏覽器不支援複製圖片，請在圖片上按右鍵「複製圖片」或改用「下載 PNG」');
         }
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        setStatus(`已複製 ${t.name} 的通知圖卡，到 LINE 聊天視窗按 Ctrl+V 貼上`, 'ok');
+        setCardStatus(`已複製 ${t.name} 的通知圖卡，到 LINE 聊天視窗按 Ctrl+V 貼上`, 'ok');
       }
     } catch (e) {
-      setStatus(e.message, 'err');
+      setCardStatus(e.message, 'err');
     }
   }
   function exportJson() {
@@ -280,7 +307,11 @@
   $('dlStatement').addEventListener('click', () => download('statement'));
   $('printRoster').addEventListener('click', () => printDoc('roster'));
   $('printStatement').addEventListener('click', () => printDoc('statement'));
-  $('cards').addEventListener('click', (ev) => {
+  $('lineCardBtn').addEventListener('click', openCardModal);
+  $('cardClose').addEventListener('click', closeCardModal);
+  $('cardModal').addEventListener('click', (ev) => { if (ev.target === $('cardModal')) closeCardModal(); });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !$('cardModal').hidden) closeCardModal(); });
+  $('cardList').addEventListener('click', (ev) => {
     const btn = ev.target.closest('button');
     if (btn) cardAction(btn);
   });

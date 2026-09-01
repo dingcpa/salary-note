@@ -338,31 +338,51 @@ def test_card_lines_and_png(page, tmp_path: Path):
     assert "Leave deduction" not in by_en
 
     _fill(page, PAYLOADS["0808"])
-    canvases = page.locator("#cards canvas")
-    assert canvases.count() == 1
-    assert page.evaluate("document.querySelector('#cards canvas').width") == 1440
+    assert page.locator("#cardModal").is_hidden()
+    page.click("#lineCardBtn")
+    page.wait_for_function("!document.getElementById('cardModal').hidden && document.querySelectorAll('#cardList img').length === 1 && document.querySelector('#cardList img').naturalWidth === 1440")
+    assert page.locator("#cardList figcaption span").inner_text() == "Sample Teacher"
     with page.expect_download() as dl:
-        page.click("#cards .dlCard")
+        page.click("#cardList .dlCard")
     png = tmp_path / dl.value.suggested_filename
     dl.value.save_as(png)
     assert png.name == "外師薪資通知圖卡_115.08_Sample Teacher.png"
     assert png.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
     pix = pymupdf.Pixmap(str(png))
     assert pix.width == 1440 and pix.height > 1400
+    assert page.locator("#cardStatus").inner_text().startswith("已下載")
+
+    page.keyboard.press("Escape")
+    assert page.locator("#cardModal").is_hidden()
+    assert page.locator("#cardList img").count() == 0
 
     page.click("#addTeacher")
     page.locator("#teachers .teacher").nth(1).locator('[data-k="name"]').fill("Second Teacher")
-    assert canvases.count() == 2
+    page.click("#lineCardBtn")
+    page.wait_for_function("document.querySelectorAll('#cardList img').length === 2")
+    page.click("#cardClose")
+    assert page.locator("#cardModal").is_hidden()
     assert page.errors == []
 
 
 def test_card_copy_to_clipboard(page):
     _fill(page, PAYLOADS["0808"])
     page.evaluate("() => { window.__copied = []; navigator.clipboard.write = async (items) => { window.__copied.push(items[0].types); }; }")
-    page.click("#cards .copyCard")
-    page.wait_for_function("document.getElementById('status').textContent.startsWith('已複製')")
+    page.click("#lineCardBtn")
+    page.wait_for_function("document.querySelectorAll('#cardList img').length === 1")
+    page.click("#cardList .copyCard")
+    page.wait_for_function("document.getElementById('cardStatus').textContent.startsWith('已複製')")
     assert page.evaluate("window.__copied") == [["image/png"]]
-    assert "Ctrl+V" in page.locator("#status").inner_text()
+    assert "Ctrl+V" in page.locator("#cardStatus").inner_text()
+
+
+def test_card_button_requires_name(page):
+    page.fill("#roc_year", "115")
+    page.fill("#month", "9")
+    page.locator("#teachers .teacher").first.locator('[data-k="name"]').fill("")
+    page.click("#lineCardBtn")
+    page.wait_for_function("document.getElementById('status').textContent.includes('姓名未填')")
+    assert page.locator("#cardModal").is_hidden()
 
 
 def test_missing_name_blocks_download(page):

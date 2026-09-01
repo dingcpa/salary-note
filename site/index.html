@@ -50,10 +50,24 @@
   .docs .roster { width:297mm; min-width:297mm; }
   .docs .statement { width:210mm; }
   .fatal { background:#fee2e2; color:#991b1b; border-bottom:2px solid #fca5a5; padding:14px 24px; font-size:15px; line-height:1.6; }
-  .cards { display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start; }
-  .cardItem { width:360px; }
-  .cardItem canvas { width:100%; height:auto; display:block; border-radius:14px; }
-  .cardItem .btns { display:flex; gap:8px; margin-top:8px; justify-content:center; }
+  .btn-line { background:#06c755; border-color:#06c755; color:#fff; font-weight:600; display:inline-flex; align-items:center; gap:8px; }
+  .btn-line:hover { background:#05b34c; }
+  .btn-line svg { width:18px; height:18px; fill:#fff; }
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:flex-start; justify-content:center; padding:24px 12px; overflow:auto; z-index:50; }
+  .modal[hidden] { display:none; }
+  .modal-box { background:#fff; border-radius:12px; width:min(560px, 100%); box-shadow:0 10px 40px rgba(0,0,0,.3); }
+  .modal-head { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--line); }
+  .modal-head b { font-size:16px; }
+  .modal-head .hint { margin:0; }
+  .modal-head .close { margin-left:auto; border:none; background:none; font-size:20px; cursor:pointer; padding:0 6px; line-height:1; }
+  .modal-body { padding:16px; max-height:calc(100vh - 150px); overflow:auto; }
+  .cardFig { margin:0 0 18px; }
+  .cardFig img { width:100%; display:block; border-radius:14px; }
+  .cardFig figcaption { display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .cardFig figcaption span { font-weight:600; margin-right:auto; }
+  #cardStatus { padding:0 16px 12px; font-size:13px; color:var(--ok); min-height:18px; }
+  #cardStatus.err { color:var(--err); }
+  body.modal-open { overflow:hidden; }
 
   /* ---------- 文件版型（畫面預覽與列印共用） ---------- */
   .doc { font-family: "標楷體", "DFKai-SB", "BiauKai", "TW-Kai", "Noto Serif TC", serif; color:#000; }
@@ -130,6 +144,7 @@
   <span class="sep"></span>
   <button type="button" id="printRoster">🖨 列印／存 PDF：印領清冊</button>
   <button type="button" id="printStatement">🖨 列印／存 PDF：通知單</button>
+  <button type="button" class="btn-line" id="lineCardBtn" title="產生 LINE 風格的薪資通知圖卡，可截圖或下載 PNG 貼給外師"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.8 3 2.5 6.5 2.5 10.8c0 3.8 3.3 7 7.8 7.6.3.1.7.2.8.5.1.3 0 .7 0 1l-.1.8c0 .2-.2.9.8.5s5.2-3.1 7.1-5.3c1.3-1.4 1.9-2.9 1.9-4.6C21.5 6.5 17.2 3 12 3zm-3.3 9.9H6.6c-.3 0-.5-.2-.5-.5V8.8c0-.3.2-.5.5-.5s.5.2.5.5v3.1h1.6c.3 0 .5.2.5.5s-.2.5-.5.5zm1.8-.5c0 .3-.2.5-.5.5s-.5-.2-.5-.5V8.8c0-.3.2-.5.5-.5s.5.2.5.5v3.6zm4.6 0c0 .2-.1.4-.3.5h-.2c-.2 0-.3-.1-.4-.2l-2-2.7v2.4c0 .3-.2.5-.5.5s-.5-.2-.5-.5V8.8c0-.2.1-.4.3-.5h.2c.2 0 .3.1.4.2l2 2.7V8.8c0-.3.2-.5.5-.5s.5.2.5.5v3.6zm3.4-2.3c.3 0 .5.2.5.5s-.2.5-.5.5h-1.6v1.3h1.6c.3 0 .5.2.5.5s-.2.5-.5.5h-2.1c-.3 0-.5-.2-.5-.5V8.8c0-.3.2-.5.5-.5h2.1c.3 0 .5.2.5.5s-.2.5-.5.5h-1.6v1.3h1.6z"/></svg>LINE 圖卡</button>
   <span class="sep"></span>
   <button type="button" id="exportBtn">匯出設定檔</button>
   <button type="button" id="importBtn">匯入設定檔／上月 Excel</button>
@@ -139,18 +154,24 @@
 </div>
 <div class="hint" style="margin:-8px 0 16px">內容會自動記在這台電腦的瀏覽器裡，下次打開就帶入；換電腦時用「匯出設定檔」或直接把上個月產出的 Excel 拖進「匯入」即可。列印時在列印對話框選「另存為 PDF」。</div>
 
-<section class="card" id="cardsPanel">
-  <h2>通知圖卡（貼到 LINE 給外師）</h2>
-  <div class="hint" style="margin:0 0 12px">每位外師一張圖卡，內容跟通知單相同。按「複製到剪貼簿」後，到 LINE 聊天視窗按 Ctrl+V 就能貼給外師；或下載 PNG 再傳。</div>
-  <div class="cards" id="cards"></div>
-</section>
-
 <section class="card" id="result">
   <h2>試算與預覽</h2>
   <table class="sum" id="summary"></table>
   <div class="docs" id="preview"></div>
 </section>
 </main>
+
+<div id="cardModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="cardModalTitle">
+  <div class="modal-box">
+    <div class="modal-head">
+      <b id="cardModalTitle">LINE 通知圖卡</b>
+      <span class="hint">可直接截圖、在圖片上按右鍵「複製圖片」，或用下方按鈕</span>
+      <button type="button" class="close" id="cardClose" aria-label="關閉">✕</button>
+    </div>
+    <div class="modal-body" id="cardList"></div>
+    <div id="cardStatus"></div>
+  </div>
+</div>
 
 <div id="print-root"></div>
 
@@ -189,11 +210,12 @@
   </div>
 </template>
 
-<script src="vendor/exceljs.min.js"></script>
-<script src="calc.js"></script>
-<script src="xlsx.js"></script>
-<script src="print.js"></script>
-<script src="card.js"></script>
-<script src="app.js"></script>
+<!-- ?v= 是快取破壞用的版本號：改了任何 JS 就把它加一，index.html 與 JS 才會一起更新 -->
+<script src="vendor/exceljs.min.js?v=4"></script>
+<script src="calc.js?v=4"></script>
+<script src="xlsx.js?v=4"></script>
+<script src="print.js?v=4"></script>
+<script src="card.js?v=4"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
