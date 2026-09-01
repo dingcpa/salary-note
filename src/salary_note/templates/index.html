@@ -48,6 +48,8 @@
   ul.files li a small { color:var(--muted); margin-left:6px; }
   ul.files li.zip a { background:#eef9f0; border-color:#9ad1a6; }
   .folder { color:var(--muted); font-size:12px; margin-top:10px; word-break:break-all; }
+  .fatal { background:#fee2e2; color:#991b1b; border-bottom:2px solid #fca5a5; padding:14px 24px; font-size:15px; line-height:1.6; }
+  .fatal code { background:#fff; padding:1px 6px; border-radius:3px; }
 </style>
 </head>
 <body>
@@ -136,8 +138,21 @@
 
 <script id="defaults" type="application/json">{{ defaults | tojson }}</script>
 <script>
+// 任何腳本錯誤都顯示在狀態列，不要無聲無息
+window.addEventListener('error', function (e) {
+  var s = document.getElementById('status');
+  if (s) { s.className = 'err'; s.textContent = '頁面腳本錯誤：' + e.message; }
+});
 (function () {
-  const DEFAULTS = JSON.parse(document.getElementById('defaults').textContent);
+  const raw = document.getElementById('defaults').textContent.trim();
+  const notServed = !raw || (raw[0] === '{' && raw[1] === '{');  // 未經 Jinja 渲染
+  if (notServed) {
+    document.body.insertAdjacentHTML('afterbegin',
+      '<div class="fatal">⚠ 這個頁面必須透過伺服器開啟才能運作。請先執行 <code>.venv\\Scripts\\python.exe server.py</code>，' +
+      '再用瀏覽器開 <b>http://127.0.0.1:8765</b>。直接開 index.html 檔、或用 VS Code Live Preview 看到的只是模板，按鈕都不會有反應。</div>');
+    return;
+  }
+  const DEFAULTS = JSON.parse(raw);
   const STORE_KEY = 'salary-note-form-v1';
   const $ = (id) => document.getElementById(id);
   const fmt = (n) => Number(n).toLocaleString('en-US');
