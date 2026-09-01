@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>外師薪資單產生器</title>
+<style>
+  :root { --line:#d9d9d9; --muted:#666; --accent:#1f5fbf; --bg:#f6f7f9; --warn:#b45309; --err:#b91c1c; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif; font-size:14px; color:#222; background:var(--bg); }
+  header { background:#1c2b3a; color:#fff; padding:12px 24px; display:flex; align-items:baseline; gap:12px; }
+  header h1 { margin:0; font-size:18px; font-weight:600; }
+  header small { color:#9fb3c8; }
+  main { max-width:1180px; margin:0 auto; padding:16px 24px 48px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px 20px; margin-bottom:16px; }
+  .card h2 { margin:0 0 12px; font-size:16px; display:flex; align-items:center; gap:12px; }
+  .row { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:flex-end; }
+  label.f { display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--muted); }
+  label.f input, label.f select { font-size:14px; padding:5px 7px; border:1px solid #bbb; border-radius:4px; min-width:90px; }
+  label.f input[type=number] { text-align:right; width:110px; }
+  label.f input.wide { width:230px; }
+  label.f input.mid { width:160px; }
+  label.f input.short { width:70px; }
+  .hint { color:var(--muted); font-size:12px; margin-top:8px; }
+  .chk { display:flex; align-items:flex-start; gap:8px; margin-top:10px; line-height:1.5; }
+  .teacher { border:1px solid var(--line); border-radius:6px; padding:12px 14px; margin-bottom:12px; background:#fcfcfd; }
+  .teacher .head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .teacher .head b { font-size:15px; }
+  .group { margin-top:8px; }
+  .group .gt { font-size:12px; color:var(--accent); font-weight:600; margin-bottom:4px; }
+  .preview { margin-top:10px; padding:8px 10px; background:#eef4fc; border-radius:4px; font-size:13px; display:flex; flex-wrap:wrap; gap:6px 18px; }
+  .preview span b { font-family: Consolas, monospace; }
+  button { font-size:14px; padding:7px 14px; border-radius:5px; border:1px solid #999; background:#fff; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-size:15px; padding:9px 22px; }
+  button.small { font-size:12px; padding:3px 9px; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .actions { display:flex; align-items:center; gap:16px; margin:8px 0 16px; }
+  #status { color:var(--muted); }
+  #status.err { color:var(--err); white-space:pre-wrap; }
+  .warn { color:var(--warn); background:#fff7ed; border:1px solid #fed7aa; padding:8px 10px; border-radius:4px; margin-bottom:10px; }
+  table.sum { border-collapse:collapse; margin-bottom:12px; }
+  table.sum th, table.sum td { border:1px solid var(--line); padding:4px 10px; text-align:right; font-size:13px; }
+  table.sum th { background:#f1f3f6; font-weight:600; }
+  table.sum td:first-child, table.sum th:first-child { text-align:left; }
+  ul.files { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(320px,1fr)); gap:8px; }
+  ul.files li a { display:block; padding:10px 12px; border:1px solid var(--line); border-radius:6px; text-decoration:none; color:#222; background:#fafafa; }
+  ul.files li a:hover { border-color:var(--accent); background:#f0f5ff; }
+  ul.files li a small { color:var(--muted); margin-left:6px; }
+  ul.files li.zip a { background:#eef9f0; border-color:#9ad1a6; }
+  .folder { color:var(--muted); font-size:12px; margin-top:10px; word-break:break-all; }
+</style>
+</head>
+<body>
+<header><h1>外師薪資單產生器</h1><small>印領清冊 ＋ 鐘點通知單 → xlsx / pdf　v{{ version }}</small></header>
+<main>
+<form id="form" autocomplete="off">
+  <section class="card">
+    <h2>給薪期間</h2>
+    <div class="row">
+      <label class="f">民國年<input type="number" id="roc_year" class="short" min="100" max="200" required></label>
+      <label class="f">月<input type="number" id="month" class="short" min="1" max="12" required></label>
+      <label class="f">起日<input type="number" id="start_day" class="short" min="1" max="31" value="1" required></label>
+      <label class="f">迄日（留空＝月底）<input type="number" id="end_day" class="short" min="1" max="31" placeholder="月底"></label>
+    </div>
+    <div class="hint" id="periodHint"></div>
+    <label class="chk"><input type="checkbox" id="prorate">
+      <span>下方各欄輸入的是<b>全月金額</b>，請依期間天數自動換算：本月薪資／住宿津貼／交通費 × 天數÷當月天數；勞保機補／勞退機補／勞保自付 × 天數÷30；健保不換算，四捨五入到元。（只在不足月時生效）</span>
+    </label>
+  </section>
+
+  <section class="card">
+    <h2>抬頭</h2>
+    <div class="row">
+      <label class="f">學校全名（清冊標題）<input id="school_name" class="wide"></label>
+      <label class="f">通知單中文抬頭<input id="statement_title_zh" class="wide"></label>
+      <label class="f">通知單英文抬頭<input id="statement_title_en" class="mid"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>外師 <button type="button" class="small" id="addTeacher">＋ 新增外師</button></h2>
+    <div id="teachers"></div>
+  </section>
+
+  <div class="actions">
+    <button type="submit" class="primary" id="submitBtn">產生檔案</button>
+    <label class="chk" style="margin:0"><input type="checkbox" id="make_pdf" checked> 同時產生 PDF（LibreOffice）</label>
+    <button type="button" id="clearBtn">清除記住的內容</button>
+    <span id="status"></span>
+  </div>
+</form>
+
+<section class="card" id="result" hidden>
+  <h2>下載</h2>
+  <div id="warnings"></div>
+  <table class="sum" id="summary"></table>
+  <ul class="files" id="files"></ul>
+  <div class="folder" id="folder"></div>
+</section>
+</main>
+
+<template id="teacherTpl">
+  <div class="teacher">
+    <div class="head"><b class="idx"></b><button type="button" class="small remove">移除</button></div>
+    <div class="group"><div class="gt">基本資料</div>
+      <div class="row">
+        <label class="f">姓名（英文）<input data-k="name" class="wide" required placeholder="英文全名"></label>
+        <label class="f">薪級<input type="number" data-k="grade" class="short" min="0"></label>
+        <label class="f">聘期（備註）<input data-k="contract" class="mid" placeholder="115/8/16-116/7/15"></label>
+        <label class="f">單位 Office<input data-k="office" class="mid" value="Academic Affairs Office"></label>
+        <label class="f">職務 Job title<input data-k="job_title" class="short" value="Teacher"></label>
+        <label class="f">預扣稅率 %<input type="number" data-k="tax_rate_pct" class="short" min="0" max="100" step="0.5" value="5"></label>
+      </div>
+    </div>
+    <div class="group"><div class="gt">薪資（實領人相關）</div>
+      <div class="row">
+        <label class="f">本月薪資<input type="number" data-k="salary" min="0" required value="0"></label>
+        <label class="f">住宿津貼<input type="number" data-k="housing" min="0" value="0"></label>
+        <label class="f">交通費<input type="number" data-k="transport" min="0" value="0"></label>
+        <label class="f">請假扣薪（正數）<input type="number" data-k="leave_deduction" min="0" value="0"></label>
+        <label class="f">勞保自付<input type="number" data-k="labor_ins_self" min="0" value="0"></label>
+        <label class="f">健保自付<input type="number" data-k="health_ins_self" min="0" value="0"></label>
+        <label class="f">健康檢查費用（另列一行）<input type="number" data-k="health_check" min="0" value="0"></label>
+      </div>
+    </div>
+    <div class="group"><div class="gt">機關負擔</div>
+      <div class="row">
+        <label class="f">勞保機補<input type="number" data-k="labor_ins_employer" min="0" value="0"></label>
+        <label class="f">健保機補<input type="number" data-k="health_ins_employer" min="0" value="0"></label>
+        <label class="f">勞退機補<input type="number" data-k="pension_employer" min="0" value="0"></label>
+      </div>
+    </div>
+    <div class="preview"></div>
+  </div>
+</template>
+
+<script id="defaults" type="application/json">{{ defaults | tojson }}</script>
+<script>
+(function () {
+  const DEFAULTS = JSON.parse(document.getElementById('defaults').textContent);
+  const STORE_KEY = 'salary-note-form-v1';
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Number(n).toLocaleString('en-US');
+  const roundHalfUp = (x) => Math.floor(x + 0.5);
+  const NUM_KEYS = ['grade', 'salary', 'housing', 'transport', 'leave_deduction', 'labor_ins_employer',
+    'health_ins_employer', 'pension_employer', 'labor_ins_self', 'health_ins_self', 'health_check', 'tax_rate_pct'];
+
+  // ---------- 期間 ----------
+  function periodInfo() {
+    const roc = +$('roc_year').value, m = +$('month').value;
+    if (!roc || !m) return null;
+    const dim = new Date(roc + 1911, m, 0).getDate();
+    const start = +$('start_day').value || 1;
+    const end = +$('end_day').value || dim;
+    const days = end - start + 1;
+    return { roc, m, dim, start, end, days, partial: start !== 1 || end !== dim, valid: end <= dim && start <= end };
+  }
+  function renderPeriodHint() {
+    const p = periodInfo();
+    const el = $('periodHint');
+    if (!p) { el.textContent = ''; return; }
+    if (!p.valid) { el.textContent = '⚠ 起迄日不合法（當月 ' + p.dim + ' 天）'; return; }
+    el.textContent = p.partial
+      ? `不足月：${p.roc}/${p.m}/${p.start}–${p.end}，共 ${p.days} 天；表頭會標示 ${p.days}/${p.dim}（薪資類）與 ${p.days}/30（勞保／勞退）`
+      : `全月：${p.roc}年${String(p.m).padStart(2, '0')}月，共 ${p.dim} 天`;
+  }
+
+  // ---------- 外師區塊 ----------
+  function addTeacher(data) {
+    const node = document.getElementById('teacherTpl').content.firstElementChild.cloneNode(true);
+    $('teachers').appendChild(node);
+    if (data) for (const [k, v] of Object.entries(data)) {
+      const inp = node.querySelector(`[data-k="${k}"]`);
+      if (inp && v !== null && v !== undefined) inp.value = v;
+    }
+    renumber();
+    renderPreviews();
+    return node;
+  }
+  function renumber() {
+    document.querySelectorAll('#teachers .teacher').forEach((t, i) => {
+      t.querySelector('.idx').textContent = `外師 ${i + 1}`;
+    });
+  }
+  function readTeacher(node) {
+    const t = {};
+    node.querySelectorAll('[data-k]').forEach((inp) => {
+      const k = inp.dataset.k;
+      if (NUM_KEYS.includes(k)) {
+        t[k] = inp.value === '' ? (k === 'grade' ? null : 0) : Number(inp.value);
+      } else t[k] = inp.value.trim();
+    });
+    return t;
+  }
+  function calcTeacher(t, p, prorate) {
+    const pay = (x) => (prorate && p && p.partial) ? roundHalfUp(x * p.days / p.dim) : x;
+    const ins = (x) => (prorate && p && p.partial) ? roundHalfUp(x * p.days / 30) : x;
+    const salary = pay(t.salary), housing = pay(t.housing), transport = pay(t.transport);
+    const subtotal = salary + housing + transport - t.leave_deduction;
+    const gross = subtotal + ins(t.labor_ins_employer) + t.health_ins_employer + ins(t.pension_employer);
+    const tax = Math.floor((salary + housing) * t.tax_rate_pct / 100 + 1e-9);
+    const deductions = tax + ins(t.labor_ins_self) + t.health_ins_self;
+    const net = subtotal - deductions;
+    return { salary, housing, transport, subtotal, gross, tax, deductions, net, statementNet: net + t.health_check };
+  }
+  function renderPreviews() {
+    const p = periodInfo();
+    const prorate = $('prorate').checked;
+    document.querySelectorAll('#teachers .teacher').forEach((node) => {
+      const c = calcTeacher(readTeacher(node), p, prorate);
+      const pro = (prorate && p && p.partial) ? `<span>換算後薪資／住宿／交通 <b>${fmt(c.salary)} / ${fmt(c.housing)} / ${fmt(c.transport)}</b></span>` : '';
+      node.querySelector('.preview').innerHTML = pro +
+        `<span>小計 <b>${fmt(c.subtotal)}</b></span><span>應發 <b>${fmt(c.gross)}</b></span>` +
+        `<span>預扣稅 <b>${fmt(c.tax)}</b></span><span>代扣款 <b>${fmt(c.deductions)}</b></span>` +
+        `<span>實領 <b>${fmt(c.net)}</b></span><span>通知單實發 <b>${fmt(c.statementNet)}</b></span>`;
+    });
+  }
+
+  // ---------- 收集與儲存 ----------
+  function collect() {
+    const teachers = [...document.querySelectorAll('#teachers .teacher')].map(readTeacher);
+    return {
+      period: {
+        roc_year: +$('roc_year').value, month: +$('month').value,
+        start_day: +$('start_day').value || 1,
+        end_day: $('end_day').value === '' ? null : +$('end_day').value,
+      },
+      school_name: $('school_name').value.trim(),
+      statement_title_zh: $('statement_title_zh').value.trim(),
+      statement_title_en: $('statement_title_en').value.trim(),
+      prorate: $('prorate').checked,
+      make_pdf: $('make_pdf').checked,
+      teachers,
+    };
+  }
+  function restore() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { saved = null; }
+    const d = saved || {};
+    const per = d.period || {};
+    $('roc_year').value = per.roc_year || DEFAULTS.period.roc_year;
+    $('month').value = per.month || DEFAULTS.period.month;
+    $('start_day').value = per.start_day || 1;
+    $('end_day').value = per.end_day || '';
+    $('school_name').value = d.school_name || DEFAULTS.payroll.school_name;
+    $('statement_title_zh').value = d.statement_title_zh || DEFAULTS.payroll.statement_title_zh;
+    $('statement_title_en').value = d.statement_title_en || DEFAULTS.payroll.statement_title_en;
+    $('prorate').checked = !!d.prorate;
+    $('make_pdf').checked = d.make_pdf === undefined ? DEFAULTS.has_soffice : d.make_pdf;
+    $('teachers').innerHTML = '';
+    (d.teachers && d.teachers.length ? d.teachers : [null]).forEach(addTeacher);
+    renderPeriodHint();
+  }
+  function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(collect())); } catch (e) { /* ignore */ } }
+
+  // ---------- 送出 ----------
+  function explainError(status, body) {
+    if (status === 422 && body && Array.isArray(body.detail)) {
+      return body.detail.map((e) => `${(e.loc || []).slice(1).join('.')}: ${e.msg}`).join('\n');
+    }
+    return (body && (body.detail || body.message)) || `HTTP ${status}`;
+  }
+  async function submit(ev) {
+    ev.preventDefault();
+    const status = $('status');
+    const btn = $('submitBtn');
+    const payload = collect();
+    if (!payload.teachers.length) { status.className = 'err'; status.textContent = '至少要有一位外師'; return; }
+    save();
+    btn.disabled = true; status.className = ''; status.textContent = payload.make_pdf ? '產生中（含 PDF 轉檔，約需 10 秒）…' : '產生中…';
+    try {
+      const r = await fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      let body = null;
+      try { body = await r.json(); } catch (e) { body = null; }
+      if (!r.ok) throw new Error(explainError(r.status, body));
+      showResult(body);
+      status.textContent = '完成';
+    } catch (e) {
+      status.className = 'err'; status.textContent = '失敗：' + e.message;
+    } finally { btn.disabled = false; }
+  }
+  function showResult(data) {
+    $('result').hidden = false;
+    $('warnings').innerHTML = (data.warnings || []).map((w) => `<div class="warn">⚠ ${w}</div>`).join('');
+    const s = data.summary;
+    let html = '<tr><th>外師</th><th>小計</th><th>應發</th><th>預扣稅</th><th>代扣款</th><th>實領</th><th>通知單實發</th></tr>';
+    for (const t of s.teachers) {
+      html += `<tr><td>${t.name}</td><td>${fmt(t.subtotal)}</td><td>${fmt(t.gross)}</td><td>${fmt(t.tax)}</td><td>${fmt(t.deductions)}</td><td>${fmt(t.net)}</td><td>${fmt(t.statement_net)}</td></tr>`;
+    }
+    html += `<tr><th>總計（含健檢）</th><th></th><th>${fmt(s.total_gross)}</th><th></th><th></th><th>${fmt(s.total_net)}</th><th></th></tr>`;
+    html += `<tr><td colspan="7">應發總計大寫：${s.total_gross_upper} 元整</td></tr>`;
+    $('summary').innerHTML = html;
+    const kindLabel = { 'roster-xlsx': '印領清冊 Excel', 'roster-pdf': '印領清冊 PDF', 'statement-xlsx': '通知單 Excel', 'statement-pdf': '通知單 PDF', 'zip': '全部打包 ZIP' };
+    $('files').innerHTML = data.files.map((f) =>
+      `<li class="${f.kind}"><a href="${f.url}" download>${kindLabel[f.kind] || f.kind}<br><small>${f.name} · ${(f.size / 1024).toFixed(0)} KB</small></a></li>`).join('');
+    $('folder').textContent = '檔案位置：' + data.folder;
+    $('result').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ---------- 綁定 ----------
+  $('addTeacher').addEventListener('click', () => addTeacher(null));
+  $('teachers').addEventListener('click', (ev) => {
+    if (ev.target.classList.contains('remove')) {
+      ev.target.closest('.teacher').remove();
+      renumber(); renderPreviews();
+    }
+  });
+  $('form').addEventListener('input', () => { renderPeriodHint(); renderPreviews(); });
+  $('form').addEventListener('submit', submit);
+  $('clearBtn').addEventListener('click', () => { localStorage.removeItem(STORE_KEY); restore(); });
+  restore();
+})();
+</script>
+</body>
+</html>
