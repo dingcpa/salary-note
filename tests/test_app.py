@@ -1,5 +1,7 @@
 """FastAPI 端點測試（不轉 PDF，避免依賴 LibreOffice）。"""
 
+import json
+import re
 from pathlib import Path
 
 import pytest
@@ -30,6 +32,13 @@ def test_index_renders_form(client: TestClient):
     assert r.status_code == 200
     assert "外師薪資單" in r.text
     assert 'id="teachers"' in r.text
+    # Jinja 有真的渲染（直接開 html 檔會看到 {{ version }} 原字、JS 讀不到預設值）
+    assert "{{" not in r.text
+    m = re.search(r'id="defaults" type="application/json">(.*?)</script>', r.text, re.S)
+    assert m, "找不到 defaults JSON"
+    defaults = json.loads(m.group(1))
+    assert defaults["payroll"]["school_name"] == "嘉義市立嘉義國民中學"
+    assert defaults["period"]["roc_year"] >= 115
 
 
 def test_generate_and_download(client: TestClient):
