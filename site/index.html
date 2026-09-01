@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>外師薪資單產生器</title>
+<style>
+  :root { --line:#d9d9d9; --muted:#666; --accent:#1f5fbf; --bg:#f6f7f9; --warn:#b45309; --err:#b91c1c; --ok:#15803d; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif; font-size:14px; color:#222; background:var(--bg); }
+  header { background:#1c2b3a; color:#fff; padding:12px 24px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:18px; font-weight:600; }
+  header small { color:#9fb3c8; }
+  header .saved { margin-left:auto; color:#9fb3c8; font-size:12px; }
+  main { max-width:1180px; margin:0 auto; padding:16px 24px 48px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px 20px; margin-bottom:16px; }
+  .card h2 { margin:0 0 12px; font-size:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .row { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:flex-end; }
+  label.f { display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--muted); }
+  label.f input { font-size:14px; padding:5px 7px; border:1px solid #bbb; border-radius:4px; min-width:90px; }
+  label.f input[type=number] { text-align:right; width:110px; }
+  label.f input.wide { width:230px; }
+  label.f input.mid { width:160px; }
+  label.f input.short { width:70px; }
+  .hint { color:var(--muted); font-size:12px; margin-top:8px; }
+  .chk { display:flex; align-items:flex-start; gap:8px; margin-top:10px; line-height:1.5; }
+  .teacher { border:1px solid var(--line); border-radius:6px; padding:12px 14px; margin-bottom:12px; background:#fcfcfd; }
+  .teacher .head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .teacher .head b { font-size:15px; }
+  .group { margin-top:8px; }
+  .group .gt { font-size:12px; color:var(--accent); font-weight:600; margin-bottom:4px; }
+  .preview { margin-top:10px; padding:8px 10px; background:#eef4fc; border-radius:4px; font-size:13px; display:flex; flex-wrap:wrap; gap:6px 18px; }
+  .preview span b { font-family: Consolas, monospace; }
+  button { font-size:14px; padding:7px 14px; border-radius:5px; border:1px solid #999; background:#fff; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-size:15px; padding:9px 18px; }
+  button.small { font-size:12px; padding:3px 9px; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .actions { display:flex; align-items:center; gap:10px; margin:8px 0 16px; flex-wrap:wrap; }
+  .actions .sep { width:1px; height:28px; background:var(--line); margin:0 4px; }
+  #status { color:var(--muted); }
+  #status.err { color:var(--err); white-space:pre-wrap; }
+  #status.ok { color:var(--ok); }
+  .warn { color:var(--warn); background:#fff7ed; border:1px solid #fed7aa; padding:8px 10px; border-radius:4px; margin-bottom:10px; }
+  table.sum { border-collapse:collapse; margin-bottom:12px; }
+  table.sum th, table.sum td { border:1px solid var(--line); padding:4px 10px; text-align:right; font-size:13px; }
+  table.sum th { background:#f1f3f6; font-weight:600; }
+  table.sum td:first-child, table.sum th:first-child { text-align:left; }
+  .docs { overflow:auto; background:#e5e7eb; padding:16px; border-radius:6px; }
+  .docs .doc { background:#fff; margin:0 auto 16px; padding:10mm; box-shadow:0 1px 4px rgba(0,0,0,.2); }
+  .docs .roster { width:297mm; min-width:297mm; }
+  .docs .statement { width:210mm; }
+  .fatal { background:#fee2e2; color:#991b1b; border-bottom:2px solid #fca5a5; padding:14px 24px; font-size:15px; line-height:1.6; }
+
+  /* ---------- 文件版型（畫面預覽與列印共用） ---------- */
+  .doc { font-family: "標楷體", "DFKai-SB", "BiauKai", "TW-Kai", "Noto Serif TC", serif; color:#000; }
+  .doc table { border-collapse:collapse; width:100%; table-layout:fixed; }
+  .doc td, .doc th { border:1px solid #000; text-align:center; vertical-align:middle; font-weight:normal; padding:0 2px; overflow:hidden; line-height:1.25; }
+  .roster h1 { font-size:22pt; font-weight:bold; text-align:center; margin:0 0 6mm; line-height:13mm; white-space:nowrap; }
+  .roster th { font-size:12pt; height:18.8mm; }
+  .roster td { font-family:"Times New Roman", serif; font-size:12pt; }
+  .roster tr.t td { height:18.5mm; }
+  .roster tr.x td { height:11mm; }
+  .roster td.zh, .roster td.upper, .roster td.remark, .roster td.remark2 { font-family:inherit; }
+  .roster td.upper { font-size:14pt; }
+  .roster td.remark { font-size:10pt; text-align:left; }
+  .roster td.remark2 { text-align:left; }
+  .roster .sig { position:relative; height:10mm; margin-top:22mm; font-size:14pt; }
+  .roster .sig span { position:absolute; top:0; white-space:nowrap; }
+  .roster .sig2 { margin-top:12mm; }
+  .statement table { width:135mm; margin:0 auto; }
+  .statement th, .statement td { font-size:12pt; height:15.5mm; }
+  .statement th .en, .statement td { font-family:"Times New Roman", serif; }
+  .statement tr.title th { font-size:14pt; height:21mm; }
+  .statement tr.deduction td, .statement tr.deduction th { height:35mm; }
+  .statement tr.tall th, .statement tr.tall td { height:20.5mm; }
+
+  #print-root { display:none; }
+  @media print {
+    body { background:#fff; }
+    body > *:not(#print-root) { display:none !important; }
+    #print-root { display:block; }
+    #print-root .doc { page-break-after:always; }
+    #print-root .doc:last-child { page-break-after:auto; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>外師薪資單產生器</h1><small>印領清冊 ＋ 鐘點通知單 → Excel／列印成 PDF</small>
+  <span class="saved" id="savedAt"></span>
+</header>
+<main>
+<form id="form" autocomplete="off" onsubmit="return false">
+  <section class="card">
+    <h2>給薪期間</h2>
+    <div class="row">
+      <label class="f">民國年<input type="number" id="roc_year" class="short" min="100" max="200" required></label>
+      <label class="f">月<input type="number" id="month" class="short" min="1" max="12" required></label>
+      <label class="f">起日<input type="number" id="start_day" class="short" min="1" max="31" value="1" required></label>
+      <label class="f">迄日（留空＝月底）<input type="number" id="end_day" class="short" min="1" max="31" placeholder="月底"></label>
+    </div>
+    <div class="hint" id="periodHint"></div>
+    <label class="chk"><input type="checkbox" id="prorate">
+      <span>下方各欄輸入的是<b>全月金額</b>，請依期間天數自動換算：本月薪資／住宿津貼／交通費 × 天數÷當月天數；勞保機補／勞退機補／勞保自付 × 天數÷30；健保不換算，四捨五入到元。（只在不足月時生效；建議勾選，這樣每月只要改期間）</span>
+    </label>
+  </section>
+
+  <section class="card">
+    <h2>抬頭</h2>
+    <div class="row">
+      <label class="f">學校全名（清冊標題）<input id="school_name" class="wide"></label>
+      <label class="f">通知單中文抬頭<input id="statement_title_zh" class="wide"></label>
+      <label class="f">通知單英文抬頭<input id="statement_title_en" class="mid"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>外師 <button type="button" class="small" id="addTeacher">＋ 新增外師</button></h2>
+    <div id="teachers"></div>
+  </section>
+</form>
+
+<div class="actions">
+  <button type="button" class="primary" id="dlRoster">⬇ 印領清冊 Excel</button>
+  <button type="button" class="primary" id="dlStatement">⬇ 通知單 Excel</button>
+  <span class="sep"></span>
+  <button type="button" id="printRoster">🖨 列印／存 PDF：印領清冊</button>
+  <button type="button" id="printStatement">🖨 列印／存 PDF：通知單</button>
+  <span class="sep"></span>
+  <button type="button" id="exportBtn">匯出設定檔</button>
+  <button type="button" id="importBtn">匯入設定檔／上月 Excel</button>
+  <input type="file" id="importFile" accept=".json,.xlsx" hidden>
+  <button type="button" id="clearBtn">全部清除</button>
+  <span id="status"></span>
+</div>
+<div class="hint" style="margin:-8px 0 16px">內容會自動記在這台電腦的瀏覽器裡，下次打開就帶入；換電腦時用「匯出設定檔」或直接把上個月產出的 Excel 拖進「匯入」即可。列印時在列印對話框選「另存為 PDF」。</div>
+
+<section class="card" id="result">
+  <h2>試算與預覽</h2>
+  <table class="sum" id="summary"></table>
+  <div class="docs" id="preview"></div>
+</section>
+</main>
+
+<div id="print-root"></div>
+
+<template id="teacherTpl">
+  <div class="teacher">
+    <div class="head"><b class="idx"></b><button type="button" class="small remove">移除</button></div>
+    <div class="group"><div class="gt">基本資料</div>
+      <div class="row">
+        <label class="f">姓名（英文）<input data-k="name" class="wide" required placeholder="英文全名"></label>
+        <label class="f">薪級<input type="number" data-k="grade" class="short" min="0"></label>
+        <label class="f">聘期（備註）<input data-k="contract" class="mid" placeholder="115/8/16-116/7/15"></label>
+        <label class="f">單位 Office<input data-k="office" class="mid" value="Academic Affairs Office"></label>
+        <label class="f">職務 Job title<input data-k="job_title" class="short" value="Teacher"></label>
+        <label class="f">預扣稅率 %<input type="number" data-k="tax_rate_pct" class="short" min="0" max="100" step="0.5" value="5"></label>
+      </div>
+    </div>
+    <div class="group"><div class="gt">薪資（實領人相關）</div>
+      <div class="row">
+        <label class="f">本月薪資<input type="number" data-k="salary" min="0" required value="0"></label>
+        <label class="f">住宿津貼<input type="number" data-k="housing" min="0" value="0"></label>
+        <label class="f">交通費<input type="number" data-k="transport" min="0" value="0"></label>
+        <label class="f">請假扣薪（正數）<input type="number" data-k="leave_deduction" min="0" value="0"></label>
+        <label class="f">勞保自付<input type="number" data-k="labor_ins_self" min="0" value="0"></label>
+        <label class="f">健保自付<input type="number" data-k="health_ins_self" min="0" value="0"></label>
+        <label class="f">健康檢查費用（另列一行）<input type="number" data-k="health_check" min="0" value="0"></label>
+      </div>
+    </div>
+    <div class="group"><div class="gt">機關負擔</div>
+      <div class="row">
+        <label class="f">勞保機補<input type="number" data-k="labor_ins_employer" min="0" value="0"></label>
+        <label class="f">健保機補<input type="number" data-k="health_ins_employer" min="0" value="0"></label>
+        <label class="f">勞退機補<input type="number" data-k="pension_employer" min="0" value="0"></label>
+      </div>
+    </div>
+    <div class="preview"></div>
+  </div>
+</template>
+
+<script src="vendor/exceljs.min.js"></script>
+<script src="calc.js"></script>
+<script src="xlsx.js"></script>
+<script src="print.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

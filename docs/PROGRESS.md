@@ -1,12 +1,12 @@
 ---
 status: active
 goal: 網頁填表一鍵產出嘉義國中外籍教師薪資印領清冊與鐘點通知單的 xlsx 與 pdf
-progress: 75%
+progress: 90%
 updated: 2026-09-01
-next: 使用者用真實資料在瀏覽器實測一輪（.venv\Scripts\python.exe server.py → http://127.0.0.1:8765），依回饋微調版面與欄位；之後做外師基本資料記憶功能
+next: 使用者把 repo 推上 GitHub、Settings→Pages 選 GitHub Actions，拿到網址後用真實資料實測靜態版；依回饋微調
 url_local: http://127.0.0.1:8765
 url_prod:
-deploy: 本機執行（需 LibreOffice 轉 PDF）
+deploy: 靜態版 site\ 由 .github/workflows/pages.yml 發布到 GitHub Pages（尚未推上 GitHub）；Python 版本機執行
 ---
 
 # 開發進度
@@ -18,6 +18,11 @@ deploy: 本機執行（需 LibreOffice 轉 PDF）
 驗收標準：用 115.08（8/16–8/31 不足月、含健康檢查費用 1,936）的樣本資料產出，金額與原表完全一致（應發 54,000／實領 40,587／總計 55,936／實領總計 42,523／通知單實發 42,523），版面與原表相近可直接列印。
 
 ## 目前成果（已完成、現在就可用的部分）
+
+- 2026-09-01 **靜態版 `site\` 完成**（給學校承辦人、GitHub Pages 部署）：
+  - `calc.js` 計算（與 Python 版逐項對照）、`xlsx.js` ExcelJS 產印領清冊／通知單 xlsx（與 Python 版 openpyxl 產出逐格比對一致：值、公式、字型、對齊、框線、合併、欄寬、列高、頁面設定）、`print.js` 列印版型（橫式清冊／直式通知單）、`app.js` 表單
+  - 每次輸入即自動存 localStorage、打開即帶入；匯出／匯入 JSON；產出的 xlsx 內藏設定可拖回帶入
+  - `tests	est_static_site.py` 15 項 Playwright 測試；`.github/workflows/pages.yml` 部署 workflow
 
 - 2026-09-01 MVP 完成，38 項 pytest 全綠（含 LibreOffice 轉 PDF 整合測試與 FastAPI 端點測試）：
   - `src/salary_note/models.py` 期間（民國年月、不足月起迄日、英文月份標籤、按天數換算）與外師薪資項目模型
@@ -32,11 +37,10 @@ deploy: 本機執行（需 LibreOffice 轉 PDF）
 
 ## 進行中
 
-- [ ] 使用者以真實資料在瀏覽器實測，收集版面／欄位回饋
+- [ ] 推上 GitHub 啟用 Pages，承辦人以真實資料實測靜態版，收集回饋
 
 ## 待執行
 
-- [ ] 外師基本資料（姓名、薪級、聘期、保費、全月薪資）記憶／帶入功能，讓次月只改期間
 - [ ] 機票補助印領清冊（原表第三個工作表 `114.07機票`）版型
 - [ ] 通知單「給薪月份」全月時的英文寫法（目前 `September 2026`）待學校確認
 - [ ] 若要給非本機使用者用：決定部署方式（目前只綁 127.0.0.1）
@@ -49,6 +53,9 @@ deploy: 本機執行（需 LibreOffice 轉 PDF）
 - 2026-09-01 請假扣薪以正數輸入，公式 =C+D+E−F（原表 SUM(C:F) 需自行填負數）。
 - 2026-09-01 清冊固定產出「總計（數字）」＋「總計（大寫）」兩列（原表單人月份只有大寫列），一致比較好讀。
 - 2026-09-01 測試資料用假名 `Sample Teacher`，金額沿用原表以便驗證；真實姓名不進 git。
+
+- 2026-09-01 交付物改為靜態版 `site\`（承辦人不必裝 Python／LibreOffice）；Python 版保留當對照答案，兩邊版型同步維護。PDF 改走瀏覽器列印（標楷體是微軟授權字型，不能內嵌到公開網站的 jsPDF）。
+- 2026-09-01 「記住上次內容」三層：localStorage 自動存＋JSON 匯出入＋xlsx 內藏設定（隱藏工作表）。
 
 ## Commit Trail
 

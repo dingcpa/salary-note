@@ -6,6 +6,8 @@
 
 嘉義市立嘉義國民中學外籍英語教師薪資套版產生器：在網頁表單填入期間與每位外師的薪資項目，一鍵產出「外籍英語教師薪資印領清冊」與「外籍教師鐘點通知單（CYJH Salary Statement）」的 xlsx 與 pdf。
 
+**交付物是 `site\`（純前端靜態網頁，部署到 GitHub Pages 給學校承辦人用）**；`src\salary_note\` 的 Python 版是最早的實作，現在當「對照答案」：`tests	est_static_site.py` 在真瀏覽器用 ExcelJS 產 xlsx，再用 openpyxl 跟 Python 版逐格比對。改版型或計算規則時**兩邊都要改**，測試會抓出不一致。
+
 ## 如何啟動
 
 ```
@@ -19,6 +21,10 @@ start-server.bat                         # 雙擊即可：cd 到專案、起伺�
 - 產出放 `data\output\{時間戳}_{民國年月}\`，可用 `OUTPUT_DIR` 覆蓋
 
 ## 本專案特有慣例
+
+- `site\` 不用打包工具、不用 ES module（要能 file:// 直接開），四支 JS 用 UMD 風格掛全域：`SalaryCalc`、`SalaryXlsx`、`SalaryPrint`；ExcelJS 放 `siteendor\` 不走 CDN
+- 靜態版的「記住上次內容」= 每次輸入即寫 localStorage（key `salary-note-v2`）＋匯出／匯入 JSON＋產出的 xlsx 內藏隱藏工作表 `_salary_note_data`（A2 為 JSON）
+- 靜態版 PDF 走瀏覽器列印（`#print-root` 只在 print media 顯示，`#page-style` 動態切 landscape／portrait）；`scriptsender_site_print.py` 可用 headless Chromium 印成 PDF/PNG 目視檢查
 
 - 印領清冊版型以 `data\input\115嘉義國中外師薪資印領清冊表new(次月10日前).xls` 的 `115.08` 工作表為準；通知單版型以 `data\input\通知單樣本_115.08.jpg` 為準
 - 計算規則（沿用學校原表公式）：
