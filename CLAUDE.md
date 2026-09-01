@@ -23,9 +23,9 @@ start-server.bat                         # 雙擊即可：cd 到專案、起伺�
 ## 本專案特有慣例
 
 - `site\` 不用打包工具、不用 ES module（要能 file:// 直接開），JS 用 UMD 風格掛全域：`SalaryCalc`、`SalaryXlsx`、`SalaryPrint`、`SalaryCard`（LINE 通知圖卡，Canvas 畫 PNG；`lines()` 純資料、`draw()` 畫圖，`scripts\render_card.py` 可產 PNG 目視）；ExcelJS 放 `site\vendor\` 不走 CDN
+- `site\index.html` 的 `<script src="x.js?v=N">` 是快取破壞版本號（GitHub Pages 快取 10 分鐘）：**改任何 site JS 就把 N 加一**，否則使用者可能拿到新 index.html＋舊 JS
 - 靜態版的「記住上次內容」= 每次輸入即寫 localStorage（key `salary-note-v2`）＋匯出／匯入 JSON＋產出的 xlsx 內藏隱藏工作表 `_salary_note_data`（A2 為 JSON）
-- 靜態版 PDF 走瀏覽器列印（`#print-root` 只在 print media 顯示，`#page-style` 動態切 landscape／portrait）；`scripts
-ender_site_print.py` 可用 headless Chromium 印成 PDF/PNG 目視檢查
+- 靜態版 PDF 走瀏覽器列印（`#print-root` 只在 print media 顯示，`#page-style` 動態切 landscape／portrait）；`scripts\render_site_print.py` 可用 headless Chromium 印成 PDF/PNG 目視檢查
 
 - 印領清冊版型以 `data\input\115嘉義國中外師薪資印領清冊表new(次月10日前).xls` 的 `115.08` 工作表為準；通知單版型以 `data\input\通知單樣本_115.08.jpg` 為準
 - 計算規則（沿用學校原表公式）：
