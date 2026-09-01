@@ -1,0 +1,27 @@
+# 資料與產出（正本在工作區，這裡都是可拋棄副本）
+data/
+logs/
+*.log
+output/
+backup*/
+
+# 機密
+.env
+secrets/
+
+# 環境
+.venv/
+venv/
+__pycache__/
+*.pyc
+node_modules/
+
+# 客戶資料保險絲：預設全擋，真的要進 git 用 git add -f 明確加入
+*.xls
+*.xlsx
+*.pdf
+*.csv
+
+# OS
+Thumbs.db
+Desktop.ini

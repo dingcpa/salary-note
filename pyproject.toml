@@ -1,0 +1,9 @@
+[project]
+name = "salary-note"
+version = "0.1.0"
+description = "外籍教師薪資印領清冊與鐘點通知單套版產生器"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
