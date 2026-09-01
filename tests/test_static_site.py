@@ -321,6 +321,50 @@ def test_print_views(page):
     assert page.errors == []
 
 
+def test_card_lines_and_png(page, tmp_path: Path):
+    """LINE 圖卡：內容資料正確、每位外師一張、下載的是 1440px 寬的 PNG。"""
+    import pymupdf
+
+    rows = page.evaluate("(p) => { const c = SalaryCalc.computePayroll(p); return SalaryCard.lines(c, c.teachers[0]); }", PAYLOADS["0808"])
+    by_en = {r["en"]: r for r in rows if r["kind"] != "section"}
+    assert by_en["Salary"]["value"] == 41677
+    assert by_en["Due amount"]["value"] == 44774
+    assert by_en["Labor insurance"]["value"] == -616
+    assert by_en["Withholding tax (5%)"]["value"] == -2212
+    assert by_en["Deduction"]["value"] == -4187
+    assert by_en["Health check reimbursement"] == {"kind": "item", "en": "Health check reimbursement", "zh": "健康檢查補助", "value": 1936, "plus": True}
+    assert by_en["Net Total"]["value"] == 42523
+    assert [r["en"] for r in rows if r["kind"] == "section"] == ["Earnings", "Deductions", "Other"]
+    assert "Leave deduction" not in by_en
+
+    _fill(page, PAYLOADS["0808"])
+    canvases = page.locator("#cards canvas")
+    assert canvases.count() == 1
+    assert page.evaluate("document.querySelector('#cards canvas').width") == 1440
+    with page.expect_download() as dl:
+        page.click("#cards .dlCard")
+    png = tmp_path / dl.value.suggested_filename
+    dl.value.save_as(png)
+    assert png.name == "外師薪資通知圖卡_115.08_Sample Teacher.png"
+    assert png.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+    pix = pymupdf.Pixmap(str(png))
+    assert pix.width == 1440 and pix.height > 1400
+
+    page.click("#addTeacher")
+    page.locator("#teachers .teacher").nth(1).locator('[data-k="name"]').fill("Second Teacher")
+    assert canvases.count() == 2
+    assert page.errors == []
+
+
+def test_card_copy_to_clipboard(page):
+    _fill(page, PAYLOADS["0808"])
+    page.evaluate("() => { window.__copied = []; navigator.clipboard.write = async (items) => { window.__copied.push(items[0].types); }; }")
+    page.click("#cards .copyCard")
+    page.wait_for_function("document.getElementById('status').textContent.startsWith('已複製')")
+    assert page.evaluate("window.__copied") == [["image/png"]]
+    assert "Ctrl+V" in page.locator("#status").inner_text()
+
+
 def test_missing_name_blocks_download(page):
     page.fill("#roc_year", "115")
     page.fill("#month", "9")

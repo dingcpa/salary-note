@@ -22,7 +22,7 @@ start-server.bat                         # 雙擊即可：cd 到專案、起伺�
 
 ## 本專案特有慣例
 
-- `site\` 不用打包工具、不用 ES module（要能 file:// 直接開），四支 JS 用 UMD 風格掛全域：`SalaryCalc`、`SalaryXlsx`、`SalaryPrint`；ExcelJS 放 `site\vendor\` 不走 CDN
+- `site\` 不用打包工具、不用 ES module（要能 file:// 直接開），JS 用 UMD 風格掛全域：`SalaryCalc`、`SalaryXlsx`、`SalaryPrint`、`SalaryCard`（LINE 通知圖卡，Canvas 畫 PNG；`lines()` 純資料、`draw()` 畫圖，`scripts\render_card.py` 可產 PNG 目視）；ExcelJS 放 `site\vendor\` 不走 CDN
 - 靜態版的「記住上次內容」= 每次輸入即寫 localStorage（key `salary-note-v2`）＋匯出／匯入 JSON＋產出的 xlsx 內藏隱藏工作表 `_salary_note_data`（A2 為 JSON）
 - 靜態版 PDF 走瀏覽器列印（`#print-root` 只在 print media 顯示，`#page-style` 動態切 landscape／portrait）；`scripts
 ender_site_print.py` 可用 headless Chromium 印成 PDF/PNG 目視檢查

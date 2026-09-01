@@ -10,6 +10,7 @@
 - **每次打開都會自動帶入上次的內容**（每次輸入即自動記在瀏覽器 localStorage），每月只要改給薪期間。
 - 換電腦或瀏覽器資料被清掉時：用「匯出設定檔」的 JSON，或**把上個月產出的 Excel 直接拖進網頁**（xlsx 內藏一份設定）即可全部帶入。
 - 「⬇ Excel」直接下載 xlsx（保留公式）；「🖨 列印／存 PDF」開列印對話框，選「另存為 PDF」。
+- **通知圖卡**：每位外師一張 LINE 風格的薪資卡（PNG，中英雙語），按「複製到剪貼簿」後到 LINE 聊天視窗 Ctrl+V 貼給外師，或下載 PNG 再傳。
 - 沒網路時雙擊 `site\index.html` 也能用（同樣會記住內容）。
 
 ## 給開發者：本機 Python 版（對照答案）
@@ -42,7 +43,7 @@ py -3.12 -m venv .venv                                    # 第一次才需要
 
 ## 結構
 
-- `site\` **靜態版網頁（GitHub Pages 部署的就是這個）**：calc.js 計算、xlsx.js（ExcelJS）產 Excel、print.js 列印版型、app.js 表單與自動記憶
+- `site\` **靜態版網頁（GitHub Pages 部署的就是這個）**：calc.js 計算、xlsx.js（ExcelJS）產 Excel、print.js 列印版型、card.js LINE 通知圖卡、app.js 表單與自動記憶
 - `src\salary_note\` Python 版（對照答案；models / calc / numerals / roster / statement / pdf / service / app）
 - `server.py` 啟動入口
 - `scripts\` 一次性腳本

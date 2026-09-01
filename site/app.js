@@ -134,12 +134,31 @@
   function renderDocs(calc) {
     $('preview').innerHTML = calc ? SalaryPrint.rosterHtml(calc) + SalaryPrint.statementHtml(calc) : '';
   }
+  function renderCards(calc) {
+    const box = $('cards');
+    const n = calc ? calc.teachers.length : 0;
+    while (box.children.length > n) box.lastElementChild.remove();
+    for (let i = 0; i < n; i++) {
+      let item = box.children[i];
+      if (!item) {
+        item = document.createElement('div');
+        item.className = 'cardItem';
+        item.innerHTML = '<canvas></canvas><div class="btns">' +
+          '<button type="button" class="small dlCard">⬇ 下載 PNG</button>' +
+          '<button type="button" class="small copyCard">📋 複製到剪貼簿</button></div>';
+        box.appendChild(item);
+      }
+      item.dataset.i = String(i);
+      SalaryCard.draw(calc, calc.teachers[i], item.querySelector('canvas'));
+    }
+  }
   function renderAll() {
     renderPeriodHint();
     const calc = currentCalc();
     renderTeacherPreviews(calc);
     renderSummary(calc);
     renderDocs(calc);
+    renderCards(calc);
     return calc;
   }
 
@@ -186,6 +205,27 @@
         ? '@page { size: A4 landscape; margin: 8mm 8mm 6mm; }'
         : '@page { size: A4 portrait; margin: 18mm 18mm; }';
       window.print();
+    } catch (e) {
+      setStatus(e.message, 'err');
+    }
+  }
+  async function cardAction(btn) {
+    const i = Number(btn.closest('.cardItem').dataset.i);
+    try {
+      const calc = requireCalc();
+      const t = calc.teachers[i];
+      if (!t) return;
+      const blob = await SalaryCard.toBlob(calc, t);
+      if (btn.classList.contains('dlCard')) {
+        saveAs(blob, SalaryCard.fileName(calc, t));
+        setStatus(`已下載 ${t.name} 的通知圖卡`, 'ok');
+      } else {
+        if (!navigator.clipboard || !navigator.clipboard.write || !window.ClipboardItem) {
+          throw new Error('這個瀏覽器不支援複製圖片，請改用「下載 PNG」再傳送');
+        }
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        setStatus(`已複製 ${t.name} 的通知圖卡，到 LINE 聊天視窗按 Ctrl+V 貼上`, 'ok');
+      }
     } catch (e) {
       setStatus(e.message, 'err');
     }
@@ -240,6 +280,10 @@
   $('dlStatement').addEventListener('click', () => download('statement'));
   $('printRoster').addEventListener('click', () => printDoc('roster'));
   $('printStatement').addEventListener('click', () => printDoc('statement'));
+  $('cards').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('button');
+    if (btn) cardAction(btn);
+  });
   $('exportBtn').addEventListener('click', exportJson);
   $('importBtn').addEventListener('click', () => $('importFile').click());
   $('importFile').addEventListener('change', (ev) => importFile(ev.target.files[0]));

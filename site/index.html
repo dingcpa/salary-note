@@ -50,6 +50,10 @@
   .docs .roster { width:297mm; min-width:297mm; }
   .docs .statement { width:210mm; }
   .fatal { background:#fee2e2; color:#991b1b; border-bottom:2px solid #fca5a5; padding:14px 24px; font-size:15px; line-height:1.6; }
+  .cards { display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start; }
+  .cardItem { width:360px; }
+  .cardItem canvas { width:100%; height:auto; display:block; border-radius:14px; }
+  .cardItem .btns { display:flex; gap:8px; margin-top:8px; justify-content:center; }
 
   /* ---------- 文件版型（畫面預覽與列印共用） ---------- */
   .doc { font-family: "標楷體", "DFKai-SB", "BiauKai", "TW-Kai", "Noto Serif TC", serif; color:#000; }
@@ -135,6 +139,12 @@
 </div>
 <div class="hint" style="margin:-8px 0 16px">內容會自動記在這台電腦的瀏覽器裡，下次打開就帶入；換電腦時用「匯出設定檔」或直接把上個月產出的 Excel 拖進「匯入」即可。列印時在列印對話框選「另存為 PDF」。</div>
 
+<section class="card" id="cardsPanel">
+  <h2>通知圖卡（貼到 LINE 給外師）</h2>
+  <div class="hint" style="margin:0 0 12px">每位外師一張圖卡，內容跟通知單相同。按「複製到剪貼簿」後，到 LINE 聊天視窗按 Ctrl+V 就能貼給外師；或下載 PNG 再傳。</div>
+  <div class="cards" id="cards"></div>
+</section>
+
 <section class="card" id="result">
   <h2>試算與預覽</h2>
   <table class="sum" id="summary"></table>
@@ -183,6 +193,7 @@
 <script src="calc.js"></script>
 <script src="xlsx.js"></script>
 <script src="print.js"></script>
+<script src="card.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

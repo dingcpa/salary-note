@@ -22,7 +22,8 @@ deploy: 靜態版 site\ 由 .github/workflows/pages.yml 發布到 GitHub Pages�
 - 2026-09-01 **靜態版 `site\` 完成**（給學校承辦人、GitHub Pages 部署）：
   - `calc.js` 計算（與 Python 版逐項對照）、`xlsx.js` ExcelJS 產印領清冊／通知單 xlsx（與 Python 版 openpyxl 產出逐格比對一致：值、公式、字型、對齊、框線、合併、欄寬、列高、頁面設定）、`print.js` 列印版型（橫式清冊／直式通知單）、`app.js` 表單
   - 每次輸入即自動存 localStorage、打開即帶入；匯出／匯入 JSON；產出的 xlsx 內藏設定可拖回帶入
-  - `tests\test_static_site.py` 15 項 Playwright 測試；`.github/workflows/pages.yml` 部署 workflow
+  - `card.js` LINE 風格通知圖卡（Canvas → PNG，下載／複製到剪貼簿貼進 LINE）
+  - `tests\test_static_site.py` 17 項 Playwright 測試；`.github/workflows/pages.yml` 部署 workflow
 
 - 2026-09-01 MVP 完成，38 項 pytest 全綠（含 LibreOffice 轉 PDF 整合測試與 FastAPI 端點測試）：
   - `src/salary_note/models.py` 期間（民國年月、不足月起迄日、英文月份標籤、按天數換算）與外師薪資項目模型
@@ -56,6 +57,8 @@ deploy: 靜態版 site\ 由 .github/workflows/pages.yml 發布到 GitHub Pages�
 
 - 2026-09-01 交付物改為靜態版 `site\`（承辦人不必裝 Python／LibreOffice）；Python 版保留當對照答案，兩邊版型同步維護。PDF 改走瀏覽器列印（標楷體是微軟授權字型，不能內嵌到公開網站的 jsPDF）。
 - 2026-09-01 「記住上次內容」三層：localStorage 自動存＋JSON 匯出入＋xlsx 內藏設定（隱藏工作表）。
+
+- 2026-09-01 外師通知改用「圖卡貼 LINE」（方案 A）：純前端 Canvas 產 PNG，承辦人手動貼；不做 LINE Messaging API 推送（需官方帳號、後端保管 token、外師加好友），日後有需要再加，卡片設計可直接沿用成 Flex Message。
 
 ## Commit Trail
 
