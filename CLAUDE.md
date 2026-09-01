@@ -9,7 +9,8 @@
 ## 如何啟動
 
 ```
-.venv\Scripts\python.exe server.py      # http://127.0.0.1:8765
+start-server.bat                         # 雙擊即可：cd 到專案、起伺服器、自動開瀏覽器
+.venv\Scripts\python.exe server.py --open   # 同上，手動版（要先 cd 到專案資料夾）
 .venv\Scripts\python.exe -m pytest -q   # 測試
 ```
 

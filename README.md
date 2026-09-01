@@ -4,10 +4,15 @@
 
 ## 使用
 
+**最簡單：雙擊專案資料夾裡的 `start-server.bat`**，它會自己切到專案資料夾、起伺服器、就緒後自動開瀏覽器；關掉那個黑色視窗就是停止。
+
+手動的話，先 `cd` 到專案資料夾再執行（在別的目錄打 `.venv\Scripts\python.exe` 會找不到檔案）：
+
 ```
-py -3.12 -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-dev.txt
-.venv\Scripts\python.exe server.py
+cd "D:\Work\嘉義國中_外師薪資單\salary-note"
+py -3.12 -m venv .venv                                    # 第一次才需要
+.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-dev.txt   # 第一次才需要
+.venv\Scripts\python.exe server.py --open               # --open 會自動開瀏覽器
 ```
 
 瀏覽器開 http://127.0.0.1:8765 ，填完按「產生檔案」，下載區會列出：
