@@ -50,8 +50,8 @@ ROW_H_TITLE = 39.0
 ROW_H_HEADER = 53.45
 ROW_H_TEACHER = 52.7
 ROW_H_EXTRA = 31.35
-SIGNATURES_1 = {"A": "教學組長", "F": "出納組長", "K": "會計室", "Q": "校長"}
-SIGNATURES_2 = {"A": "教務主任", "F": "總務主任"}
+SIGNATURES_1 = {"A": "教學組長", "I": "出納組長", "Q": "會計室"}
+SIGNATURES_2 = {"A": "教務主任", "I": "總務主任", "Q": "校長"}
 
 
 def _put(ws: Worksheet, ref: str, value, *, font: Font, align: Alignment = CENTER,

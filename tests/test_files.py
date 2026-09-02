@@ -45,8 +45,8 @@ def test_roster_layout_0808(payroll_0808: Payroll, tmp_path: Path):
     assert ws["A8"].value == "總計" and ws["B8"].value == "伍萬伍仟玖佰參拾陸" and ws["P8"].value == "元整"
     assert "B8:O8" in {str(r) for r in ws.merged_cells.ranges}
     # 核章欄
-    assert (ws["A12"].value, ws["F12"].value, ws["K12"].value, ws["Q12"].value) == ("教學組長", "出納組長", "會計室", "校長")
-    assert (ws["A14"].value, ws["F14"].value) == ("教務主任", "總務主任")
+    assert (ws["A12"].value, ws["I12"].value, ws["Q12"].value) == ("教學組長", "出納組長", "會計室")
+    assert (ws["A14"].value, ws["I14"].value, ws["Q14"].value) == ("教務主任", "總務主任", "校長")
     assert ws.page_setup.orientation == "landscape"
     assert ws.print_area.endswith("$A$1:$Q$14")
 
