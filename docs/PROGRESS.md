@@ -1,12 +1,12 @@
 ---
 status: active
 goal: 網頁填表一鍵產出嘉義國中外籍教師薪資印領清冊與鐘點通知單的 xlsx 與 pdf
-progress: 90%
-updated: 2026-09-01
-next: 使用者把 repo 推上 GitHub、Settings→Pages 選 GitHub Actions，拿到網址後用真實資料實測靜態版；依回饋微調
+progress: 95%
+updated: 2026-09-02
+next: 請學校承辦人用真實資料實測 https://dingcpa.github.io/salary-note/ ，並確認全月時通知單英文月份寫法（September 2026 或 September 1-30, 2026）；依回饋微調
 url_local: http://127.0.0.1:8765
-url_prod:
-deploy: 靜態版 site\ 由 .github/workflows/pages.yml 發布到 GitHub Pages（尚未推上 GitHub）；Python 版本機執行
+url_prod: https://dingcpa.github.io/salary-note/
+deploy: GitHub Pages（repo dingcpa/salary-note，push main 自動部署）；Python 版本機 start-server.bat
 ---
 
 # 開發進度
@@ -19,11 +19,12 @@ deploy: 靜態版 site\ 由 .github/workflows/pages.yml 發布到 GitHub Pages�
 
 ## 目前成果（已完成、現在就可用的部分）
 
+- 2026-09-01 **已上線**：https://dingcpa.github.io/salary-note/ （public repo `dingcpa/salary-note`，push main 自動部署，script 帶 `?v=N` 快取版本號）
 - 2026-09-01 **靜態版 `site\` 完成**（給學校承辦人、GitHub Pages 部署）：
   - `calc.js` 計算（與 Python 版逐項對照）、`xlsx.js` ExcelJS 產印領清冊／通知單 xlsx（與 Python 版 openpyxl 產出逐格比對一致：值、公式、字型、對齊、框線、合併、欄寬、列高、頁面設定）、`print.js` 列印版型（橫式清冊／直式通知單）、`app.js` 表單
   - 每次輸入即自動存 localStorage、打開即帶入；匯出／匯入 JSON；產出的 xlsx 內藏設定可拖回帶入
   - `card.js` LINE 風格通知圖卡：綠色「LINE 圖卡」按鈕 → 彈窗預覽（可截圖／右鍵複製）＋下載 PNG／複製到剪貼簿
-  - `tests\test_static_site.py` 18 項 Playwright 測試；`.github/workflows/pages.yml` 部署 workflow
+  - `tests\test_static_site.py` 18 項 Playwright 測試（全專案共 62 項）；`.github/workflows/pages.yml` 部署 workflow
 
 - 2026-09-01 MVP 完成，38 項 pytest 全綠（含 LibreOffice 轉 PDF 整合測試與 FastAPI 端點測試）：
   - `src/salary_note/models.py` 期間（民國年月、不足月起迄日、英文月份標籤、按天數換算）與外師薪資項目模型
@@ -38,7 +39,7 @@ deploy: 靜態版 site\ 由 .github/workflows/pages.yml 發布到 GitHub Pages�
 
 ## 進行中
 
-- [ ] 推上 GitHub 啟用 Pages，承辦人以真實資料實測靜態版，收集回饋
+- [ ] 承辦人以真實資料實測 https://dingcpa.github.io/salary-note/ ，收集回饋
 
 ## 待執行
 
@@ -62,6 +63,15 @@ deploy: 靜態版 site\ 由 .github/workflows/pages.yml 發布到 GitHub Pages�
 
 ## Commit Trail
 
+- 2f3191e docs: 修 CLAUDE.md 斷行路徑與快取版本號說明
+- fa49650 feat(site): LINE 圖卡改為綠色按鈕＋彈窗預覽；script 加 ?v= 快取版本號
+- 6e32416 feat(site): LINE 風格通知圖卡（Canvas → PNG）
+- 88758e4 fix(docs,site): 反斜線修復；清冊備註列印不折行
+- d7c7868 feat(site): GitHub Pages 靜態版（瀏覽器產 xlsx、列印 PDF、自動帶入上次內容）
+- 0101c28 feat: start-server.bat 雙擊啟動；server.py --open
+- 8d60b6c fix(ui): 未經伺服器開啟的紅字警告＋Playwright e2e
+- 08af2e6 test: 首頁 Jinja 渲染檢查
+- 2665b73 feat: MVP 印領清冊＋鐘點通知單網頁產生器（xlsx/pdf）
 - acf9ea5 init: 專案初始化（from _template）
 
 （收工時把最新 commit hash 加在最上面）
