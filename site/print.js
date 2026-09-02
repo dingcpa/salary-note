@@ -32,13 +32,14 @@
     rows += `<tr class="x">${empties(17)}</tr>`;
     rows += `<tr class="x">${td('總計', 'zh')}${empties(9)}${td(f(calc.total_gross))}${empties(4)}${td(f(calc.total_net))}<td></td></tr>`;
     rows += `<tr class="x">${td('總計', 'zh')}<td colspan="14" class="upper">${esc(calc.total_gross_upper)}</td>${td('元整', 'zh')}<td></td></tr>`;
-    // 核章欄兩列各三位、分散對齊：位置對照 Excel 欄 A / I / Q 的左緣（I 欄起點約在全寬一半）
+    // 核章欄兩列各三位、分散對齊：版面三等分，每位右側留蓋章空位。
+    // 錨點對照 Excel 欄 A / F / L 的左緣（約 0%、1/3、2/3 處）
     const left = (i) => pct(COLW.slice(0, i).reduce((a, b) => a + b, 0));
     return `<section class="doc roster">
   <h1>${esc(calc.roster_title)}</h1>
   <table>${colgroup}${rows}</table>
-  <div class="sig"><span style="left:${left(0)}">教學組長</span><span style="left:${left(8)}">出納組長</span><span style="left:${left(16)}">會計室</span></div>
-  <div class="sig sig2"><span style="left:${left(0)}">教務主任</span><span style="left:${left(8)}">總務主任</span><span style="left:${left(16)}">校長</span></div>
+  <div class="sig"><span style="left:${left(0)}">教學組長</span><span style="left:${left(5)}">出納組長</span><span style="left:${left(11)}">會計室</span></div>
+  <div class="sig sig2"><span style="left:${left(0)}">教務主任</span><span style="left:${left(5)}">總務主任</span><span style="left:${left(11)}">校長</span></div>
 </section>`;
   }
 

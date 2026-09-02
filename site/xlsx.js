@@ -102,10 +102,10 @@
 
     for (const [off, h] of [[1, 28.5], [2, 24], [3, 24], [4, 19.5], [5, 49.35], [6, 23.25]]) ws.getRow(upper + off).height = h;
     const sig = { name: KAI, size: 14 };
-    for (const [col, text] of Object.entries({ A: '教學組長', I: '出納組長', Q: '會計室' })) {
+    for (const [col, text] of Object.entries({ A: '教學組長', F: '出納組長', L: '會計室' })) {
       put(ws, `${col}${upper + 4}`, text, { font: sig, align: LEFT, border: null });
     }
-    for (const [col, text] of Object.entries({ A: '教務主任', I: '總務主任', Q: '校長' })) {
+    for (const [col, text] of Object.entries({ A: '教務主任', F: '總務主任', L: '校長' })) {
       put(ws, `${col}${upper + 6}`, text, { font: sig, align: LEFT, border: null });
     }
     const last = upper + 6;
